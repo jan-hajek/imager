@@ -5,6 +5,6 @@
 		"ext-gd": "*"
 	},
 	"autoload": {
-		"psr-0": {"Imager\\": "src/"}
+		"psr-4": {"Imager\\": "src/"}
 	}
 }
