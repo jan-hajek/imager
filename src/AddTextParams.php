@@ -63,7 +63,7 @@ class AddTextParams
 	 */
 	public static function getDefaultFontPath()
 	{
-		return IMAGER_DIR . '/files/OpenSans-Regular.ttf';
+		return __DIR__ . '/files/OpenSans-Regular.ttf';
 	}
 
 	/**
@@ -71,6 +71,6 @@ class AddTextParams
 	 */
 	public static function getDefaultBoldFontPath()
 	{
-		return IMAGER_DIR . '/files/OpenSans-Bold.ttf';
+		return __DIR__ . '/files/OpenSans-Bold.ttf';
 	}
 }

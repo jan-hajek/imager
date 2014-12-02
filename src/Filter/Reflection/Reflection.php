@@ -63,8 +63,7 @@ class Reflection implements Filter
 			$tr += $in;
 		}
 
-		$imageDirectory = __DIR__ . '/images';
-		$transparencyImage = imagecreatefrompng($imageDirectory . '/transparency.png');
+		$transparencyImage = imagecreatefrompng(__DIR__ . '/images/transparency.png');
 		imagecopyresampled($canvas, $transparencyImage, 0, $h, 0, 0, $w, $newHeight, $w, $newHeight);
 
 		return $canvas;
