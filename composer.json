@@ -1,0 +1,7 @@
+{
+	"name": "jhajek/imager",
+	"require": {
+		"php": ">=5.3.0",
+		"ext-gd": "*"
+	}
+}
