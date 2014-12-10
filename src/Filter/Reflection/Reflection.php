@@ -48,7 +48,6 @@ class Reflection implements Filter
 		$addedHeight = 36;
 		$newHeight = $h + $addedHeight;
 		$canvas = imagecreatetruecolor($w, $newHeight);
-		imageflip($image->getResource(), IMG_FLIP_VERTICAL);
 		imagecopyresampled($canvas, $image->getResource(), 0, $h, 0, 0, $w, $newHeight, $w, $newHeight);
 		imagecopyresampled($canvas, $image->getResource(), 0, 0, 0, 0, $w, $h, $w, $h);
 
