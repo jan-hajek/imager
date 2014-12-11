@@ -29,7 +29,7 @@ class TextProcessor
 		}
 		
 		if ($params->expandSide == AddTextParams::EXPAND_HEIGHT) {
-			$newHeight = $coords->getX() + count($lines) * $params->lineHeight;
+			$newHeight = $coords->getY() + count($lines) * $params->lineHeight;
 			if ($newHeight > $image->getHeight()) {
 				$image->resizeCanvasHeight($newHeight);
 			}

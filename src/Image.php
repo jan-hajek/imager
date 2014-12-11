@@ -220,7 +220,7 @@ class Image
 		$newImage = imagecreatetruecolor($this->width, $newHeight);
 		imagefill($newImage, 0, 0, $this->backgroundColor);
 
-		imagecopy($newImage, $this->resource, $this->width, $this->height, 0, 0, $this->width, $this->height);
+		imagecopy($newImage, $this->resource, 0, 0, 0, 0, $this->width, $this->height);
 		$this->resource = $newImage;
 		$this->height = $newHeight;
 	}
