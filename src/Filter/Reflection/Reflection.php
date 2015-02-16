@@ -1,25 +1,23 @@
 <?php
 namespace Imager\Filter\Reflection;
 
-use Imager\Color;
 use Imager\Filter\Filter;
 use Imager\Image;
 
 class Reflection implements Filter
 {
 	/**
-	 * @var int
-	 */
-	private $startTransparency = 70;
-	/**
-	 * @var int
-	 */
-	private $endTransparency = 100;
-	/**
-	 * 0.5 = half height reflection
 	 * @var float
 	 */
-	private $reflectionHeightRatio = 0.15;
+	private $startTransparency = 0.7;
+	/**
+	 * @var float
+	 */
+	private $endTransparency = 1;
+	/**
+	 * @var int
+	 */
+	private $reflectionHeight = 36;
 
 	/**
 	 * @param int $startTransparency
@@ -42,39 +40,27 @@ class Reflection implements Filter
 	}
 
 	/**
-	 * @param float $reflectionHeightRatio
+	 * @param Image $image
+	 * @return resource
 	 */
-	public function setReflectionHeightRatio($reflectionHeightRatio)
+	public function apply(Image $image)
 	{
-		$this->reflectionHeightRatio = $reflectionHeightRatio;
+		$canvas = $this->createNewCanvas($image);
+		$this->placeOriginalImage($canvas, $image);
+		$this->addReflection($canvas, $image);
+		return $canvas;
 	}
 
 	/**
 	 * @param Image $image
 	 * @return resource
 	 */
-	public function apply(Image $image)
+	private function createNewCanvas(Image $image)
 	{
-		$w = $image->getWidth();
-		$h = $image->getHeight();
-		$newHeight = $h + ($h * $this->reflectionHeightRatio);
-
-		$canvas = $this->createNewCanvas($w, $newHeight);
-		$this->placeOriginalImage($canvas, $image);
-		$this->placeFlippedImage($canvas, $image);
-		$this->addTransition($canvas, $image, $newHeight);
-
-		return $canvas;
-	}
-
-	/**
-	 * @param int $w
-	 * @param int $h
-	 * @return resource
-	 */
-	private function createNewCanvas($w, $h)
-	{
-		return imagecreatetruecolor($w, $h);
+		$newCanvas = imagecreatetruecolor($image->getWidth(), $image->getHeight() + $this->reflectionHeight);
+		$trans_colour = imagecolorallocatealpha($newCanvas, 0, 0, 0, 127);
+		imagefill($newCanvas, 0, 0, $trans_colour);
+		return $newCanvas;
 	}
 
 	/**
@@ -87,35 +73,31 @@ class Reflection implements Filter
 	}
 
 	/**
-	 * odraz ve skle
 	 * @param resource $canvas
 	 * @param Image $image
 	 */
-	private function placeFlippedImage($canvas, Image $image)
+	private function addReflection($canvas, Image $image)
 	{
-		$flippedImage = Image\Functions::cloneImage($image->getResource());
-		Image\Functions::flipVertical($flippedImage);
-		Image\Functions::placeImage($canvas, $flippedImage, 0, $image->getHeight());
-	}
-
-	/**
-	 * @param resource $canvas
-	 * @param Image $image
-	 * @param int $end
-	 */
-	private function addTransition($canvas, Image $image, $end)
-	{
+		$width = $image->getWidth();
 		$start = $image->getHeight();
-		$w = $image->getWidth();
+		$end = imagesy($canvas);
+		$imageResource = $image->getResource();
 
-		$whiteLine = imagecreatetruecolor($w, 1);
-		imagefilledrectangle($whiteLine, 0, 0, $w, 1, Color::createWhite());
+		$range = $end - $start;
+		$opacityDiffPerLine = ($this->endTransparency - $this->startTransparency) / $range;
+		$opacity = $this->startTransparency;
 
-		$lineTransDiff = ($this->endTransparency - $this->startTransparency) / ($end - $start);
-		$trans = $this->startTransparency;
-		for ($line = $start; $line <= $end; $line++) {
-			imagecopymerge($canvas, $whiteLine, 0, $line, 0, 0, $w, 1, round($trans));
-			$trans += $lineTransDiff;
+		for ($y = 0; $y < $range; ++$y, $opacity += $opacityDiffPerLine) {
+			$sourceLineIndex = $start - $y - 1;
+			$targetLineIndex = $start + $y;
+			for ($x = 0; $x < $width; ++$x) {
+				// found rgb in source image
+				$rgb = imagecolorsforindex($imageResource, imagecolorat($imageResource, $x, $sourceLineIndex));
+
+				// copy rgb from source image to canvas with opacity
+				$color = imagecolorallocatealpha($canvas, $rgb['red'], $rgb['green'], $rgb['blue'], round(127 * $opacity));
+				imagesetpixel($canvas, $x, $targetLineIndex, $color);
+			}
 		}
 	}
 }
