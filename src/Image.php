@@ -2,6 +2,7 @@
 namespace Imager;
 
 use Imager\Filter\Filter;
+use Imager\Image\Functions;
 use Imager\Image\TextProcessor;
 
 class Image
@@ -46,7 +47,7 @@ class Image
 	 */
 	public static function createFromResource($resource)
 	{
-		list($width, $height) = self::getResourceDimensions($resource);
+		list($width, $height) = Functions::getResourceDimensions($resource);
 		return new self($resource, $width, $height);
 	}
 	
@@ -57,7 +58,7 @@ class Image
 	public static function createFromJpeg($path)
 	{
 		$resource = imagecreatefromjpeg($path);
-		list($width, $height) = self::getFileDimensions($path);
+		list($width, $height) = Functions::getFileDimensions($path);
 		return new self($resource, $width, $height);
 	}
 
@@ -68,31 +69,8 @@ class Image
 	public static function createFromPng($path)
 	{
 		$resource = imagecreatefrompng($path);
-		list($width, $height) = self::getFileDimensions($path);
+		list($width, $height) = Functions::getFileDimensions($path);
 		return new self($resource, $width, $height);
-	}
-
-	/**
-	 * @param string $path
-	 * @throws \RuntimeException
-	 * @return array
-	 */
-	private static function getFileDimensions($path)
-	{
-		if (!$size = getimagesize($path)) {
-			throw new \RuntimeException("get dimensions from file '{$path}' failed");
-		} else {
-			return array($size[0], $size[1]);
-		}
-	}
-
-	/**
-	 * @param $resource
-	 * @return array
-	 */
-	private static function getResourceDimensions($resource)
-	{
-		return array(imagesx($resource), imagesy($resource));
 	}
 
 	/**
@@ -234,7 +212,7 @@ class Image
 	public function applyFilter(Filter $filter)
 	{
 		$this->resource = $filter->apply($this);
-		list($this->width, $this->height) = self::getResourceDimensions($this->resource);
+		list($this->width, $this->height) = Functions::getResourceDimensions($this->resource);
 	}
 
 }

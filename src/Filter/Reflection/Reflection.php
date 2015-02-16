@@ -1,41 +1,54 @@
 <?php
 namespace Imager\Filter\Reflection;
 
+use Imager\Color;
 use Imager\Filter\Filter;
 use Imager\Image;
 
 class Reflection implements Filter
 {
 	/**
-	 * @var float
+	 * @var int
 	 */
-	private $reflectionHeightRatio = 1;
+	private $startTransparency = 70;
 	/**
 	 * @var int
 	 */
-	private $startingTransparency = 70;
+	private $endTransparency = 100;
+	/**
+	 * 0.5 = half height reflection
+	 * @var float
+	 */
+	private $reflectionHeightRatio = 0.15;
+
+	/**
+	 * @param int $startTransparency
+	 * @return $this
+	 */
+	public function setStartTransparency($startTransparency)
+	{
+		$this->startTransparency = $startTransparency;
+		return $this;
+	}
+
+	/**
+	 * @param int $endTransparency
+	 * @return $this
+	 */
+	public function setEndTransparency($endTransparency)
+	{
+		$this->endTransparency = $endTransparency;
+		return $this;
+	}
 
 	/**
 	 * @param float $reflectionHeightRatio
-	 * @return $this
 	 */
 	public function setReflectionHeightRatio($reflectionHeightRatio)
 	{
 		$this->reflectionHeightRatio = $reflectionHeightRatio;
-		return $this;
 	}
 
-	/**
-	 * @param int $startingTransparency
-	 * @return $this
-	 */
-	public function setStartingTransparency($startingTransparency)
-	{
-		$this->startingTransparency = $startingTransparency;
-		return $this;
-	}
-	
-	
 	/**
 	 * @param Image $image
 	 * @return resource
@@ -44,28 +57,65 @@ class Reflection implements Filter
 	{
 		$w = $image->getWidth();
 		$h = $image->getHeight();
-		
-		$addedHeight = 36;
-		$newHeight = $h + $addedHeight;
-		$canvas = imagecreatetruecolor($w, $newHeight);
-		imagecopyresampled($canvas, $image->getResource(), 0, $h, 0, 0, $w, $newHeight, $w, $newHeight);
-		imagecopyresampled($canvas, $image->getResource(), 0, 0, 0, 0, $w, $h, $w, $h);
+		$newHeight = $h + ($h * $this->reflectionHeightRatio);
 
-		$li = imagecreatetruecolor($w, 1);
-		imagefilledrectangle($li, 0, 0, $w, 1, imagecolorallocate($li, 255, 255, 255));
-		$rH = round($h * $this->reflectionHeightRatio);
-		$tr = $this->startingTransparency;
-		$in = 100 / $rH;
-		for ($i = 0; $i <= $rH; $i++) {
-			if ($tr > 100) $tr = 100;
-			imagecopymerge($canvas, $li, 0, $h + $i, 0, 0, $w, 1, $tr);
-			$tr += $in;
-		}
-
-		$transparencyImage = imagecreatefrompng(__DIR__ . '/images/transparency.png');
-		imagecopyresampled($canvas, $transparencyImage, 0, $h, 0, 0, $w, $newHeight, $w, $newHeight);
+		$canvas = $this->createNewCanvas($w, $newHeight);
+		$this->placeOriginalImage($canvas, $image);
+		$this->placeFlippedImage($canvas, $image);
+		$this->addTransition($canvas, $image, $newHeight);
 
 		return $canvas;
-	}	
-	
+	}
+
+	/**
+	 * @param int $w
+	 * @param int $h
+	 * @return resource
+	 */
+	private function createNewCanvas($w, $h)
+	{
+		return imagecreatetruecolor($w, $h);
+	}
+
+	/**
+	 * @param resource $canvas
+	 * @param Image $image
+	 */
+	private function placeOriginalImage($canvas, Image $image)
+	{
+		Image\Functions::placeImage($canvas, $image->getResource(), 0, 0);
+	}
+
+	/**
+	 * odraz ve skle
+	 * @param resource $canvas
+	 * @param Image $image
+	 */
+	private function placeFlippedImage($canvas, Image $image)
+	{
+		$flippedImage = Image\Functions::cloneImage($image->getResource());
+		Image\Functions::flipVertical($flippedImage);
+		Image\Functions::placeImage($canvas, $flippedImage, 0, $image->getHeight());
+	}
+
+	/**
+	 * @param resource $canvas
+	 * @param Image $image
+	 * @param int $end
+	 */
+	private function addTransition($canvas, Image $image, $end)
+	{
+		$start = $image->getHeight();
+		$w = $image->getWidth();
+
+		$whiteLine = imagecreatetruecolor($w, 1);
+		imagefilledrectangle($whiteLine, 0, 0, $w, 1, Color::createWhite());
+
+		$lineTransDiff = ($this->endTransparency - $this->startTransparency) / ($end - $start);
+		$trans = $this->startTransparency;
+		for ($line = $start; $line <= $end; $line++) {
+			imagecopymerge($canvas, $whiteLine, 0, $line, 0, 0, $w, 1, round($trans));
+			$trans += $lineTransDiff;
+		}
+	}
 }
